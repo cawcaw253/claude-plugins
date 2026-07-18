@@ -1,0 +1,16 @@
+{
+  "name": "cawcaw253-plugins",
+  "owner": {
+    "name": "cawcaw253"
+  },
+  "description": "cawcaw253의 Claude Code 플러그인 마켓플레이스",
+  "plugins": [
+    {
+      "name": "harness-plugin",
+      "source": "./plugins/harness-plugin",
+      "description": "hooks/permissions로 AI 작업 범위를 제한하는 harness 구성 가이드 skill",
+      "category": "security",
+      "keywords": ["harness", "hooks", "permissions", "guardrails"]
+    }
+  ]
+}

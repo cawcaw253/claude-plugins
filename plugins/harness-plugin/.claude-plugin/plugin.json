@@ -1,0 +1,11 @@
+{
+  "name": "harness-plugin",
+  "description": "Claude Code hooks/permissions로 AI 작업 범위를 제한하는 harness 구성을 돕는 harness-hooks skill을 제공합니다.",
+  "author": {
+    "name": "cawcaw253"
+  },
+  "homepage": "https://github.com/cawcaw253/claude-plugins",
+  "repository": "https://github.com/cawcaw253/claude-plugins",
+  "license": "MIT",
+  "keywords": ["harness", "hooks", "permissions", "guardrails", "security"]
+}
