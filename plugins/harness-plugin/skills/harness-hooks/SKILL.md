@@ -251,3 +251,5 @@ exit 0
 - 공식 hooks 문서 (한국어): https://code.claude.com/docs/ko/hooks
 - 플러그인/마켓플레이스 문서: https://code.claude.com/docs/ko/plugins ,
   https://code.claude.com/docs/ko/plugin-marketplaces
+- 관련 skill: 기초 `agentic-loop`·`settings-scopes`, 확장 계층 `project-rules`
+  (규칙은 강제 아님 → 훅으로 강제), `slash-commands`, `workflows`, `agent-memory`

@@ -65,7 +65,8 @@ Claude Code가 내부적으로 어떻게 동작하는지 설명한다. harness(�
 
 이 외에 서브에이전트 생성·질문 등 오케스트레이션 도구가 있다.
 
-> **확장 계층:** 내장 도구가 기초다. 그 위에 [skills], [MCP], [hooks], [subagents]가
+> **확장 계층:** 내장 도구가 기초다. 그 위에 skills(→ `slash-commands` skill),
+> MCP, hooks(→ `harness-hooks` skill), subagents, workflows(→ `workflows` skill)가
 > 올라간다. **harness는 주로 hooks·permissions 계층에서 이 도구 사용을 제약한다.**
 
 ---
@@ -107,7 +108,7 @@ Claude Code가 내부적으로 어떻게 동작하는지 설명한다. harness(�
 
 - 대화는 `~/.claude/projects/` 아래 JSONL로 저장 → rewind/resume/fork 가능.
 - **세션은 독립적**이다. 새 세션은 fresh 컨텍스트로 시작(이전 대화 미포함).
-  → 지속 정보는 auto memory 또는 CLAUDE.md로.
+  → 지속 정보는 auto memory(→ `agent-memory` skill) 또는 CLAUDE.md(→ `project-rules` skill)로.
 - `--continue`/`--resume`은 같은 세션 ID에 이어붙임, `--fork-session`/`/branch`는 복제.
 
 ### 체크포인트 & 권한 (harness의 안전 축)
@@ -131,9 +132,16 @@ Claude Code가 내부적으로 어떻게 동작하는지 설명한다. harness(�
 
 ## harness 구성으로 이어지는 흐름
 
+**기초**
 1. **이 skill** — 어디에 개입 가능한가? (loop 단계·도구·접근 범위 파악)
 2. **`settings-scopes` skill** — 정책을 *어디에* 둘 것인가? (user/project/local)
 3. **`harness-hooks` skill** — 정책을 *어떻게* 강제할 것인가? (훅으로 검사·차단·수정)
+
+**확장 계층 (무엇을 제약·구성하는가)**
+- **`project-rules` skill** — CLAUDE.md·`.claude/rules/`로 지침 구성
+- **`slash-commands` skill** — 커스텀 커맨드(= skill) 작성·접근 제어
+- **`workflows` skill** — 다수 subagent 오케스트레이션과 비활성화
+- **`agent-memory` skill** — 자동 메모리 통제
 
 ---
 

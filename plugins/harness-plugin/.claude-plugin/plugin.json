@@ -1,11 +1,11 @@
 {
   "name": "harness-plugin",
-  "description": "Claude Code harness 구성을 돕는 skill 모음: 동작 원리(agentic-loop), 설정 범위(settings-scopes), hooks/permissions 강제(harness-hooks).",
+  "description": "Claude Code harness 구성을 돕는 skill 모음: 동작 원리(agentic-loop), 설정 범위(settings-scopes), hooks/permissions 강제(harness-hooks), CLAUDE.md 규칙(project-rules), 커스텀 커맨드(slash-commands), 오케스트레이션(workflows), 자동 메모리(agent-memory).",
   "author": {
     "name": "cawcaw253"
   },
   "homepage": "https://github.com/cawcaw253/claude-plugins",
   "repository": "https://github.com/cawcaw253/claude-plugins",
   "license": "MIT",
-  "keywords": ["harness", "hooks", "permissions", "guardrails", "security"]
+  "keywords": ["harness", "hooks", "permissions", "guardrails", "security", "skills", "commands", "workflows", "memory", "rules"]
 }

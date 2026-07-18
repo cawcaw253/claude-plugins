@@ -8,9 +8,9 @@
     {
       "name": "harness-plugin",
       "source": "./plugins/harness-plugin",
-      "description": "harness 구성 가이드 skill 모음(동작 원리·설정 범위·hooks/permissions)",
+      "description": "harness 구성 가이드 skill 모음(동작 원리·설정 범위·hooks·규칙·커맨드·workflow·메모리)",
       "category": "security",
-      "keywords": ["harness", "hooks", "permissions", "guardrails"]
+      "keywords": ["harness", "hooks", "permissions", "guardrails", "skills", "commands", "workflows", "memory"]
     }
   ]
 }

@@ -14,11 +14,12 @@ claude-plugins/
         │   └── plugin.json
         └── skills/
             ├── agentic-loop/     # Claude Code 동작 원리
-            │   └── SKILL.md
             ├── settings-scopes/  # 설정 범위(user/project/local)
-            │   └── SKILL.md
-            └── harness-hooks/    # hooks/permissions 강제
-                └── SKILL.md
+            ├── harness-hooks/    # hooks/permissions 강제
+            ├── project-rules/    # CLAUDE.md·.claude/rules 규칙
+            ├── slash-commands/   # 커스텀 커맨드(= skill)
+            ├── workflows/        # subagent 오케스트레이션
+            └── agent-memory/     # 자동 메모리·MEMORY.md
 ```
 
 ## 포함된 플러그인
@@ -29,13 +30,25 @@ claude-plugins/
 
 ### `harness-plugin`의 skill
 
-harness를 설계하는 순서대로 3개의 skill을 제공한다.
+**기초** — harness를 설계하는 순서.
 
 | skill | 역할 | 다루는 것 |
 |-------|------|-----------|
 | `agentic-loop` | 어디에 개입 가능한가 | agentic loop 3단계, 도구, 컨텍스트 윈도우, 세션, 체크포인트/권한 |
 | `settings-scopes` | 정책을 어느 범위에 둘까 | user/project/local 범위·우선순위·파일 위치 (Managed 조직 범위는 무시) |
 | `harness-hooks` | 정책을 어떻게 강제할까 | hooks 수명주기, matcher/if, 종료 코드·JSON 출력, settings 등록 |
+
+**확장 계층** — 무엇을 구성·제약하는가.
+
+| skill | 역할 | 다루는 것 |
+|-------|------|-----------|
+| `project-rules` | 지침을 구성 | CLAUDE.md 위치·로드 순서, `.claude/rules/`·path-specific rules, @import, "규칙은 강제 아님" |
+| `slash-commands` | 커스텀 커맨드 | `.claude/commands`↔skills, frontmatter, 인자, 동적 컨텍스트 주입, 접근 제어 |
+| `workflows` | 오케스트레이션 | dynamic workflows, subagent/skill/team 비교, ultracode, 저장·비활성화 |
+| `agent-memory` | 메모리 통제 | 자동 메모리 vs CLAUDE.md, MEMORY.md 로드 규칙, 위치, 활성화·감사 |
+
+> Managed(조직 레벨) 설정은 IT/DevOps가 배포하는 엔터프라이즈 범위로, 이 플러그인의
+> harness 구성 대상이 아니다. skill 전반에서 해당 내용은 "무시"로 명시해 두었다.
 
 ## 설치
 
