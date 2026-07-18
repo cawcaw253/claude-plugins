@@ -17,6 +17,10 @@ Claude Code의 **hooks**로 AI 작업 범위를 제한하는 harness를 구성�
 permissions로 표현하기 어려운 조건부 정책(특정 서브명령, 특정 파일 확장자, 브랜치 조건 등)을
 코드로 강제할 때 사용한다.
 
+> **선행 skill:** 개입 지점(loop 단계·도구)은 `agentic-loop` skill, 정책을 둘 범위
+> (user/project/local)는 `settings-scopes` skill에서 다룬다. 이 skill은 그 위에서
+> 정책을 *어떻게 강제*하는지를 다룬다.
+
 ---
 
 ## 1단계: 어떤 시점에 개입할지 정한다 (수명주기 이벤트)

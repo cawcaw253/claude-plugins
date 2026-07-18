@@ -13,7 +13,11 @@ claude-plugins/
         ├── .claude-plugin/
         │   └── plugin.json
         └── skills/
-            └── harness-hooks/
+            ├── agentic-loop/     # Claude Code 동작 원리
+            │   └── SKILL.md
+            ├── settings-scopes/  # 설정 범위(user/project/local)
+            │   └── SKILL.md
+            └── harness-hooks/    # hooks/permissions 강제
                 └── SKILL.md
 ```
 
@@ -21,7 +25,17 @@ claude-plugins/
 
 | 플러그인 | 설명 |
 |----------|------|
-| `harness-plugin` | Claude Code hooks/permissions로 AI 작업 범위를 제한하는 harness 구성을 돕는 `harness-hooks` skill |
+| `harness-plugin` | Claude Code harness 구성을 돕는 skill 모음 |
+
+### `harness-plugin`의 skill
+
+harness를 설계하는 순서대로 3개의 skill을 제공한다.
+
+| skill | 역할 | 다루는 것 |
+|-------|------|-----------|
+| `agentic-loop` | 어디에 개입 가능한가 | agentic loop 3단계, 도구, 컨텍스트 윈도우, 세션, 체크포인트/권한 |
+| `settings-scopes` | 정책을 어느 범위에 둘까 | user/project/local 범위·우선순위·파일 위치 (Managed 조직 범위는 무시) |
+| `harness-hooks` | 정책을 어떻게 강제할까 | hooks 수명주기, matcher/if, 종료 코드·JSON 출력, settings 등록 |
 
 ## 설치
 

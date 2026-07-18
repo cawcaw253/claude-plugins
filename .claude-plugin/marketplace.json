@@ -8,7 +8,7 @@
     {
       "name": "harness-plugin",
       "source": "./plugins/harness-plugin",
-      "description": "hooks/permissions로 AI 작업 범위를 제한하는 harness 구성 가이드 skill",
+      "description": "harness 구성 가이드 skill 모음(동작 원리·설정 범위·hooks/permissions)",
       "category": "security",
       "keywords": ["harness", "hooks", "permissions", "guardrails"]
     }

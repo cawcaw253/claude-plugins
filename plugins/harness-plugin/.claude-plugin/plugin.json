@@ -1,6 +1,6 @@
 {
   "name": "harness-plugin",
-  "description": "Claude Code hooks/permissions로 AI 작업 범위를 제한하는 harness 구성을 돕는 harness-hooks skill을 제공합니다.",
+  "description": "Claude Code harness 구성을 돕는 skill 모음: 동작 원리(agentic-loop), 설정 범위(settings-scopes), hooks/permissions 강제(harness-hooks).",
   "author": {
     "name": "cawcaw253"
   },
