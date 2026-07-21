@@ -1,80 +1,86 @@
 ---
 name: project-rules
 description: >-
-  CLAUDE.md와 .claude/rules/로 프로젝트 규칙·지침을 구성하는 방법을 안내한다.
-  파일 위치·로드 순서, path-specific rules(paths frontmatter), @import, 효과적인
-  지침 작성, "규칙은 강제가 아닌 컨텍스트"라는 한계와 hooks 병행을 다룬다.
-  사용자가 "CLAUDE.md 작성", "프로젝트 규칙", ".claude/rules", "특정 파일에만
-  규칙 적용", "지침을 안 지킨다", "커밋 규칙 강제" 등을 물을 때 사용한다.
+  Explains how to configure project rules and instructions with CLAUDE.md and
+  .claude/rules/. Covers file locations and load order, path-specific rules
+  (paths frontmatter), @import, writing effective instructions, the limitation
+  that "rules are context, not enforcement", and pairing rules with hooks. Use
+  when the user asks about "writing CLAUDE.md", "project rules",
+  ".claude/rules", "applying rules to specific files only", "Claude ignores my
+  instructions", "enforcing commit rules", and similar topics.
 ---
 
-# 프로젝트 규칙 (CLAUDE.md & .claude/rules/)
+# Project Rules (CLAUDE.md & .claude/rules/)
 
-Claude에 지속적인 지침을 주는 방법을 안내한다.
-공식 문서: https://code.claude.com/docs/ko/memory
+Explains how to give Claude persistent instructions.
+Official docs: https://code.claude.com/docs/en/memory
 
-> ⚠️ **핵심 한계:** CLAUDE.md와 rules는 시스템 프롬프트가 아니라 **컨텍스트**로 전달된다.
-> Claude는 이를 읽고 따르려 하지만 **강제되지 않는다.** 커밋 전·파일 편집 후처럼
-> 반드시 실행돼야 하는 정책은 `harness-hooks` skill의 `PreToolUse` 훅으로 강제한다.
-> 규칙은 안내, 훅은 강제 — 둘을 병행한다.
+> ⚠️ **Key limitation:** CLAUDE.md and rules are delivered as **context**, not as the system prompt.
+> Claude reads them and tries to follow them, but they are **not enforced.** Policies that must
+> always run — such as pre-commit checks or post-edit steps — should be enforced with `PreToolUse`
+> hooks from the `harness-hooks` skill. Rules guide, hooks enforce — use both together.
 
 ---
 
-## 1. CLAUDE.md 위치와 로드 순서
+## 1. CLAUDE.md locations and load order
 
-여러 위치에 둘 수 있고, **넓은 범위 → 좁은 범위** 순으로 로드되어 뒤에 온 것이 더 가깝다.
-(모두 서로를 덮어쓰지 않고 컨텍스트에 **연결**된다.)
+CLAUDE.md can live in multiple locations and loads **broad scope → narrow scope**, so later
+files sit closer to the conversation. (They do not override each other — all are **concatenated**
+into context.)
 
-| 범위 | 위치 | 공유 |
+| Scope | Location | Shared with |
 |------|------|:----:|
-| 사용자 | `~/.claude/CLAUDE.md` | 나(모든 프로젝트) |
-| 프로젝트 | `./CLAUDE.md` 또는 `./.claude/CLAUDE.md` | 팀(커밋) |
-| 로컬 | `./CLAUDE.local.md` | 나(이 프로젝트, gitignore) |
+| User | `~/.claude/CLAUDE.md` | Me (all projects) |
+| Project | `./CLAUDE.md` or `./.claude/CLAUDE.md` | Team (committed) |
+| Local | `./CLAUDE.local.md` | Me (this project, gitignored) |
 
-- 작업 디렉토리 **위쪽** 계층의 CLAUDE.md는 시작 시 전체 로드. 아래쪽 하위 디렉토리
-  파일은 Claude가 그 디렉토리 파일을 읽을 때 로드된다.
-- 프로젝트 루트 CLAUDE.md는 `/compact` 후 디스크에서 다시 읽혀 **재주입**된다
-  (하위 디렉토리 중첩 CLAUDE.md는 자동 재주입 안 됨).
-- `/init`으로 시작 CLAUDE.md 자동 생성, `/memory`로 로드된 파일 확인·편집.
+- CLAUDE.md files **above** the working directory are fully loaded at startup. Files in
+  subdirectories below are loaded when Claude reads files in that directory.
+- The project root CLAUDE.md is re-read from disk and **re-injected** after `/compact`
+  (nested subdirectory CLAUDE.md files are not automatically re-injected).
+- Use `/init` to auto-generate a starter CLAUDE.md, and `/memory` to view and edit loaded files.
 
-> **harness 관점:** 팀 공유 규칙(커밋 규칙 등)은 **프로젝트 CLAUDE.md**에 커밋한다.
-> 이 repo가 커밋 규칙을 `CLAUDE.md`에 둔 것이 그 예다.
-
----
-
-## 2. 효과적인 지침 작성
-
-컨텍스트를 소비하고 준수율에 영향을 주므로 **구체적·간결·구조적**으로 쓴다.
-
-- **크기:** 파일당 200줄 이하 목표. 길수록 컨텍스트 소비↑·준수율↓.
-- **구조:** 마크다운 헤더·불릿으로 그룹화.
-- **구체성:** 검증 가능하게. "제대로 포맷" ❌ → "2칸 들여쓰기" ✅ /
-  "테스트하라" ❌ → "커밋 전 `npm test` 실행" ✅
-- **일관성:** 충돌하는 규칙이 있으면 Claude가 임의 선택한다. 주기적으로 정리.
-- HTML 주석(`<!-- ... -->`)은 컨텍스트 주입 전 제거되어 토큰 미소비(유지보수 노트용).
+> **Harness perspective:** commit team-shared rules (commit conventions, etc.) into the
+> **project CLAUDE.md**. This repo keeping its commit rules in `CLAUDE.md` is an example.
 
 ---
 
-## 3. `.claude/rules/` — 규칙을 파일로 분리
+## 2. Writing effective instructions
 
-대규모 프로젝트에서 지침을 주제별 파일로 나눈다. 모듈식이라 팀 유지보수가 쉽다.
+Instructions consume context and affect compliance, so write them to be **specific, concise,
+and structured**.
+
+- **Size:** aim for 200 lines or fewer per file. Longer files consume more context and lower compliance.
+- **Structure:** group with markdown headers and bullets.
+- **Specificity:** make instructions verifiable. "Format properly" ❌ → "Use 2-space indentation" ✅ /
+  "Run tests" ❌ → "Run `npm test` before committing" ✅
+- **Consistency:** if rules conflict, Claude picks arbitrarily. Clean up periodically.
+- HTML comments (`<!-- ... -->`) are stripped before context injection and consume no tokens
+  (useful for maintenance notes).
+
+---
+
+## 3. `.claude/rules/` — split rules into files
+
+In large projects, split instructions into topic-specific files. The modular layout makes team
+maintenance easier.
 
 ```text
 .claude/
-├── CLAUDE.md          # 주 지침
+├── CLAUDE.md          # Main instructions
 └── rules/
     ├── code-style.md
     ├── testing.md
     └── security.md
 ```
 
-- `paths` frontmatter가 **없는** 규칙 → `.claude/CLAUDE.md`와 같은 우선순위로 시작 시 로드.
-- `~/.claude/rules/`는 사용자 수준(모든 프로젝트), 프로젝트 규칙보다 먼저 로드.
-- 심볼릭 링크로 프로젝트 간 공유 가능.
+- Rules **without** a `paths` frontmatter → loaded at startup with the same priority as `.claude/CLAUDE.md`.
+- `~/.claude/rules/` is user-level (all projects) and loads before project rules.
+- Symbolic links allow sharing across projects.
 
-### Path-specific rules (경로 범위 규칙)
+### Path-specific rules
 
-`paths`로 특정 파일에서 작업할 때만 로드 → 노이즈·컨텍스트 절약.
+Use `paths` to load a rule only when working on matching files → less noise, saves context.
 
 ```markdown
 ---
@@ -83,65 +89,66 @@ paths:
   - "lib/**/*.ts"
 ---
 
-# API 개발 규칙
-- 모든 엔드포인트는 입력 검증 포함
-- 표준 오류 응답 형식 사용
+# API development rules
+- Every endpoint includes input validation
+- Use the standard error response format
 ```
 
-| 패턴 | 일치 |
+| Pattern | Matches |
 |------|------|
-| `**/*.ts` | 모든 TS 파일 |
-| `src/**/*` | `src/` 아래 전부 |
-| `*.md` | 루트의 md |
+| `**/*.ts` | All TS files |
+| `src/**/*` | Everything under `src/` |
+| `*.md` | md files in root |
 
-> 경로 범위 규칙은 **파일을 읽을 때** 트리거된다(모든 도구 사용 시가 아님).
-> 항상 필요하진 않은 작업별 절차는 규칙보다 **skill**(`slash-commands` skill 참고)이 낫다.
+> Path-specific rules trigger **when files are read** (not on every tool use).
+> For task-specific procedures that are not always needed, a **skill** (see the
+> `slash-commands` skill) is a better fit than a rule.
 
 ---
 
-## 4. @import로 파일 가져오기
+## 4. Importing files with @import
 
-CLAUDE.md는 `@path/to/file` 구문으로 다른 파일을 확장 포함한다(최대 4홉 재귀).
+CLAUDE.md can inline other files with the `@path/to/file` syntax (up to 4 hops of recursion).
 
 ```text
-프로젝트 개요는 @README, npm 명령은 @package.json 참고.
+See @README for project overview and @package.json for npm commands.
 
-# 추가 지침
-- git 워크플로우 @docs/git-instructions.md
-- 개인 지침 @~/.claude/my-project-instructions.md
+# Additional instructions
+- git workflow @docs/git-instructions.md
+- personal instructions @~/.claude/my-project-instructions.md
 ```
 
-- 상대 경로는 **가져오는 파일 기준**으로 해석.
-- 코드 스팬/펜스 안의 `@`는 무시된다(`` `@README` ``는 리터럴).
-- ⚠️ import한 파일도 **시작 시 컨텍스트에 로드**되므로 토큰을 줄이진 못한다.
-  토큰 절약이 목적이면 path-specific rules나 skill을 쓴다.
-- `AGENTS.md`는 Claude가 직접 읽지 않는다 → `@AGENTS.md`로 import하거나 심볼릭 링크.
+- Relative paths are resolved **relative to the importing file**.
+- `@` inside code spans/fences is ignored (`` `@README` `` is a literal).
+- ⚠️ Imported files are also **loaded into context at startup**, so imports do not reduce tokens.
+  If saving tokens is the goal, use path-specific rules or skills.
+- Claude does not read `AGENTS.md` directly → import it with `@AGENTS.md` or use a symlink.
 
 ---
 
-## 5. "안 지킨다" 문제 해결
+## 5. Troubleshooting "Claude ignores my rules"
 
-1. `/memory`로 파일이 실제 **로드**됐는지 확인(목록에 없으면 Claude가 못 봄).
-2. 지침을 더 **구체적**으로.
-3. 파일 간 **충돌** 제거.
-4. 그래도 반드시 지켜야 하면 → **hook으로 강제**(`harness-hooks` skill).
-   `--append-system-prompt`는 스크립트/자동화에 적합.
+1. Check with `/memory` that the file is actually **loaded** (if it is not in the list, Claude never saw it).
+2. Make the instructions more **specific**.
+3. Remove **conflicts** between files.
+4. If it must always be followed → **enforce with a hook** (`harness-hooks` skill).
+   `--append-system-prompt` suits scripts/automation.
 
-> 규칙(CLAUDE.md/rules) = 행동 형성, hook = 하드 강제. `설정(permissions.deny)` = 도구 차단.
-> 세 층을 목적에 맞게 나눠 쓴다.
-
----
-
-## Managed(조직 레벨) — 무시
-
-> 조직은 관리 정책 위치의 CLAUDE.md나 `managed-settings.json`의 `claudeMd` 키로
-> 조직 전체 지침을 강제 배포할 수 있다. **이 repo의 harness 범위 밖이므로 다루지 않는다.**
-> 개별 개발자는 user/project/local CLAUDE.md만 사용한다.
+> Rules (CLAUDE.md/rules) = shape behavior, hooks = hard enforcement,
+> settings (`permissions.deny`) = block tools. Use the three layers according to purpose.
 
 ---
 
-## 참고 링크
+## Managed (organization level) — out of scope
 
-- 메모리 (한국어): https://code.claude.com/docs/ko/memory
-- Hooks: https://code.claude.com/docs/ko/hooks
-- 관련 skill: `agent-memory`(자동 메모리), `slash-commands`, `harness-hooks`
+> Organizations can force-deploy org-wide instructions via a CLAUDE.md in the managed policy
+> location or the `claudeMd` key in `managed-settings.json`. **This is outside the harness scope
+> of this repo, so it is not covered.** Individual developers use only user/project/local CLAUDE.md.
+
+---
+
+## References
+
+- Memory: https://code.claude.com/docs/en/memory
+- Hooks: https://code.claude.com/docs/en/hooks
+- Related skills: `agent-memory` (automatic memory), `slash-commands`, `harness-hooks`

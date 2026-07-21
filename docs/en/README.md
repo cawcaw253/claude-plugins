@@ -1,11 +1,8 @@
+[English](../en/README.md) | [한국어](../ko/README.md)
+
 # cawcaw253-plugins
 
 cawcaw253's Claude Code plugin marketplace.
-
-## Documentation
-
-- [English](docs/en/README.md)
-- [한국어](docs/ko/README.md)
 
 ## Structure
 
@@ -61,6 +58,10 @@ claude-plugins/
 > Managed (organization-level) settings are the enterprise scope deployed by IT/DevOps and
 > are out of scope for this plugin's harness configuration. Every skill explicitly marks
 > that scope as "ignored".
+
+The `harness-hooks` skill ships with a companion reference,
+`skills/harness-hooks/examples.md`, which collects practical hook patterns and is
+consulted alongside the skill when needed.
 
 ## Installation
 

@@ -1,114 +1,122 @@
 ---
 name: agent-memory
 description: >-
-  Claude Code의 자동 메모리(auto memory)와 MEMORY.md를 안내한다. CLAUDE.md와의 차이,
-  저장 위치(~/.claude/projects/<project>/memory/), 로드 규칙(200줄/25KB), 활성화·비활성화,
-  감사·편집(/memory), autoMemoryDirectory/autoMemoryEnabled 설정을 다룬다.
-  사용자가 "자동 메모리", "MEMORY.md", "Claude가 기억하는 내용", "메모리 끄기",
-  "기억한 것 확인/편집", "auto memory 위치" 등을 물을 때 사용한다.
+  Guides you through Claude Code's auto memory and MEMORY.md. Covers how it differs
+  from CLAUDE.md, storage location (~/.claude/projects/<project>/memory/), load rules
+  (200 lines/25KB), enabling/disabling, auditing/editing (/memory), and the
+  autoMemoryDirectory/autoMemoryEnabled settings. Use when the user asks about
+  "auto memory", "MEMORY.md", "what Claude remembers", "turn off memory",
+  "check/edit what it remembered", "auto memory location", etc.
 ---
 
-# 자동 메모리 (Auto Memory & MEMORY.md)
+# Auto Memory (Auto Memory & MEMORY.md)
 
-Claude가 세션 간 학습을 스스로 축적하는 **자동 메모리**를 안내한다.
-공식 문서: https://code.claude.com/docs/ko/memory
+Guides you through **auto memory**, where Claude accumulates its own learnings across sessions.
+Official docs: https://code.claude.com/docs/en/memory
 
-> 각 세션은 fresh 컨텍스트로 시작한다. 두 메커니즘이 세션 간 지식을 전달한다:
-> **CLAUDE.md**(사용자가 쓰는 지침 → `project-rules` skill)와
-> **자동 메모리**(Claude가 스스로 쓰는 학습 노트, 이 skill).
+> Each session starts with fresh context. Two mechanisms carry knowledge across sessions:
+> **CLAUDE.md** (instructions written by the user → the `project-rules` skill) and
+> **auto memory** (learning notes Claude writes itself — this skill).
 
 ---
 
-## 1. CLAUDE.md vs 자동 메모리
+## 1. CLAUDE.md vs Auto Memory
 
-둘 다 모든 대화 시작 시 로드되고, 둘 다 **강제가 아닌 컨텍스트**다.
+Both are loaded at the start of every conversation, and both are **context, not enforcement**.
 
-| | CLAUDE.md | 자동 메모리 |
+| | CLAUDE.md | Auto memory |
 |---|---|---|
-| 작성자 | 사용자 | Claude |
-| 내용 | 지침·규칙 | 학습·패턴 |
-| 범위 | 프로젝트/사용자/조직 | 저장소당(worktree 공유) |
-| 로드 | 모든 세션(전체) | 모든 세션(MEMORY.md 앞 200줄/25KB) |
-| 용도 | 코딩 표준·워크플로우·아키텍처 | 빌드 명령·디버깅 인사이트·발견한 선호도 |
+| Author | User | Claude |
+| Content | Instructions and rules | Learnings and patterns |
+| Scope | Project/user/organization | Per repository (shared across worktrees) |
+| Loading | Every session (entire file) | Every session (first 200 lines/25KB of MEMORY.md) |
+| Purpose | Coding standards, workflows, architecture | Build commands, debugging insights, discovered preferences |
 
-> 작업 차단이 필요하면 어느 쪽도 아니라 **PreToolUse 훅**(`harness-hooks` skill)을 쓴다.
-> subagent도 자기 자동 메모리를 가질 수 있다(subagent 설정).
+> If you need to block actions, use neither — use a **PreToolUse hook** (the `harness-hooks` skill).
+> Subagents can also have their own auto memory (subagent configuration).
 
 ---
 
-## 2. 저장 위치
+## 2. Storage Location
 
-프로젝트마다 `~/.claude/projects/<project>/memory/` 디렉토리를 가진다.
-`<project>`는 git 저장소에서 파생 → 같은 저장소의 모든 worktree·하위 디렉토리가 **공유**.
-자동 메모리는 **머신 로컬**이며 머신·클라우드 간 공유되지 않는다.
+Each project has a `~/.claude/projects/<project>/memory/` directory.
+`<project>` is derived from the git repository → all worktrees and subdirectories of the
+same repository **share** it. Auto memory is **machine-local** and is not shared across
+machines or the cloud.
 
 ```text
 ~/.claude/projects/<project>/memory/
-├── MEMORY.md          # 간결한 인덱스, 모든 세션에 로드
-├── debugging.md       # 주제 파일(필요 시 로드)
+├── MEMORY.md          # concise index, loaded every session
+├── debugging.md       # topic file (loaded on demand)
 ├── api-conventions.md
 └── ...
 ```
 
-다른 위치에 저장하려면 `settings.json`의 `autoMemoryDirectory`(절대경로 또는 `~/`):
+To store it elsewhere, set `autoMemoryDirectory` in `settings.json` (absolute path or `~/`):
 
 ```json
 { "autoMemoryDirectory": "~/my-custom-memory-dir" }
 ```
 
-> 프로젝트/로컬 설정에서 지정하면 **워크스페이스 신뢰 수락 후**에만 적용된다(hook과 동일 게이트).
+> When specified in project/local settings, it only applies **after workspace trust is
+> accepted** (the same gate as hooks).
 
 ---
 
-## 3. 작동 방식
+## 3. How It Works
 
-- **MEMORY.md 앞 200줄 또는 25KB**(먼저 오는 것)만 모든 대화 시작 시 로드. 초과분은 미로드.
-  → Claude는 자세한 노트를 주제 파일로 옮겨 MEMORY.md를 간결히 유지한다.
-- 이 제한은 **MEMORY.md에만** 적용(CLAUDE.md는 길이 무관 전체 로드, 단 짧을수록 준수↑).
-- `debugging.md` 등 주제 파일은 시작 시 로드 안 됨 → 필요 시 파일 도구로 읽는다.
-- UI에 "Writing memory"/"Recalled memory"가 보이면 memory 디렉토리를 읽고/쓰는 중이다.
+- Only the **first 200 lines or 25KB of MEMORY.md** (whichever comes first) is loaded at
+  the start of every conversation. Anything beyond that is not loaded.
+  → Claude moves detailed notes into topic files to keep MEMORY.md concise.
+- This limit applies **only to MEMORY.md** (CLAUDE.md is loaded in full regardless of
+  length, though shorter means better adherence).
+- Topic files such as `debugging.md` are not loaded at startup → Claude reads them with
+  file tools when needed.
+- If you see "Writing memory"/"Recalled memory" in the UI, Claude is reading/writing the
+  memory directory.
 
 ---
 
-## 4. 활성화·비활성화 (harness)
+## 4. Enabling/Disabling (Harness)
 
-기본 **켜짐**. 토글:
+**On** by default. To toggle:
 
-| 방법 | 효과 |
+| Method | Effect |
 |------|------|
-| `/memory`의 자동 메모리 토글 | 세션에서 on/off |
-| `settings.json`의 `"autoMemoryEnabled": false` | 비활성화 |
-| 환경변수 `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` | 비활성화 |
+| Auto memory toggle in `/memory` | On/off for the session |
+| `"autoMemoryEnabled": false` in `settings.json` | Disable |
+| Environment variable `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` | Disable |
 
-> **harness 관점:** 민감 정보가 자동 메모리에 남는 게 우려되면 `autoMemoryEnabled: false`로
-> 끄거나 `autoMemoryDirectory`로 위치를 통제한다. 자동 메모리는 강제가 아닌 컨텍스트이므로
-> 정책 강제와는 무관하다.
-
----
-
-## 5. 감사·편집
-
-- 자동 메모리 파일은 언제든 편집·삭제 가능한 일반 마크다운.
-- `/memory` — 로드된 CLAUDE.md·CLAUDE.local.md·rules 목록 표시, 자동 메모리 on/off,
-  메모리 폴더 열기. 파일 선택 시 편집기로 연다.
-- "X를 기억해"라고 하면 Claude가 **자동 메모리**에 저장한다. 대신 CLAUDE.md에 넣으려면
-  "이걸 CLAUDE.md에 추가해"라고 명시하거나 `/memory`로 직접 편집한다.
-- 저장된 내용을 모르면 `/memory` → 자동 메모리 폴더에서 확인.
+> **Harness perspective:** if you are concerned about sensitive information lingering in
+> auto memory, turn it off with `autoMemoryEnabled: false` or control its location with
+> `autoMemoryDirectory`. Auto memory is context, not enforcement, so it plays no role in
+> policy enforcement.
 
 ---
 
-## 6. 이 플러그인 저장소의 실제 사용
+## 5. Auditing & Editing
 
-이 repo에는 `~/.claude/projects/-...-claude-plugins/memory/`에 자동 메모리가 존재한다.
-harness 구성 시 "무엇을 기억할지"와 "무엇을 CLAUDE.md 규칙으로 강제할지"를 구분한다:
-
-- **자동 메모리** — Claude가 발견한 빌드 명령·선호도(변동 가능한 학습).
-- **CLAUDE.md** — 팀이 반드시 지켜야 하는 규칙(예: 이 repo의 커밋 규칙) → `project-rules` skill.
-- **hook** — 규칙조차 강제로 만들 때 → `harness-hooks` skill.
+- Auto memory files are plain markdown that can be edited or deleted at any time.
+- `/memory` — shows the loaded CLAUDE.md, CLAUDE.local.md, and rules; toggles auto memory
+  on/off; opens the memory folder. Selecting a file opens it in the editor.
+- If you say "remember X", Claude saves it to **auto memory**. To put it in CLAUDE.md
+  instead, say explicitly "add this to CLAUDE.md" or edit it directly via `/memory`.
+- If you're unsure what's stored, use `/memory` → check the auto memory folder.
 
 ---
 
-## 참고 링크
+## 6. Actual Usage in This Plugin Repository
 
-- 메모리 (한국어): https://code.claude.com/docs/ko/memory
-- 관련 skill: `project-rules`(CLAUDE.md), `settings-scopes`, `harness-hooks`
+This repo has auto memory at `~/.claude/projects/-...-claude-plugins/memory/`.
+When configuring a harness, distinguish "what to remember" from "what to enforce as a CLAUDE.md rule":
+
+- **Auto memory** — build commands and preferences Claude discovered (mutable learnings).
+- **CLAUDE.md** — rules the team must follow (e.g., this repo's commit rules) → the `project-rules` skill.
+- **hook** — when even rules must be made mandatory → the `harness-hooks` skill.
+
+---
+
+## Reference Links
+
+- Memory: https://code.claude.com/docs/en/memory
+- Related skills: `project-rules` (CLAUDE.md), `settings-scopes`, `harness-hooks`

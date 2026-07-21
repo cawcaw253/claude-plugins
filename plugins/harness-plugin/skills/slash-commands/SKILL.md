@@ -1,84 +1,86 @@
 ---
 name: slash-commands
 description: >-
-  커스텀 slash command(= skill)를 작성·배치하는 방법을 안내한다. .claude/commands와
-  .claude/skills의 관계, frontmatter(description, disable-model-invocation,
-  allowed-tools, argument-hint, model 등), 인자($ARGUMENTS/$N), 동적 컨텍스트
-  주입(!`cmd`), 파일 위치·우선순위·네임스페이스를 다룬다. 사용자가 "커스텀 커맨드
-  만들기", "/commit 같은 커맨드", "slash command frontmatter", "커맨드에 인자 전달"
-  등을 물을 때 사용한다.
+  Explains how to write and place custom slash commands (= skills). Covers the
+  relationship between .claude/commands and .claude/skills, frontmatter
+  (description, disable-model-invocation, allowed-tools, argument-hint, model,
+  etc.), arguments ($ARGUMENTS/$N), dynamic context injection (!`cmd`), and
+  file locations, priority, and namespaces. Use when the user asks about
+  "creating a custom command", "a command like /commit", "slash command
+  frontmatter", "passing arguments to a command", and similar topics.
 ---
 
-# 커스텀 Slash Commands (= Skills)
+# Custom Slash Commands (= Skills)
 
-`/commit` 같은 커스텀 커맨드를 만드는 방법을 안내한다.
-공식 문서: https://code.claude.com/docs/en/slash-commands , https://code.claude.com/docs/en/skills
+Explains how to create custom commands like `/commit`.
+Official docs: https://code.claude.com/docs/en/slash-commands , https://code.claude.com/docs/en/skills
 
-> **핵심:** 커스텀 커맨드는 **skill로 병합**되었다. `.claude/commands/deploy.md`와
-> `.claude/skills/deploy/SKILL.md`는 둘 다 `/deploy`를 만들고 동일하게 동작한다.
-> 기존 `.claude/commands/*.md`도 계속 작동하지만, **skill 방식이 권장**된다
-> (지원 파일 디렉토리·자동 호출 제어 등 추가 기능 제공).
-> 이 repo의 `/commit`은 `.claude/commands/commit.md`에 있으며 정상 작동한다.
+> **Key point:** custom commands have been **merged into skills**. `.claude/commands/deploy.md`
+> and `.claude/skills/deploy/SKILL.md` both create `/deploy` and behave identically.
+> Existing `.claude/commands/*.md` files keep working, but the **skill format is recommended**
+> (it adds supporting-file directories, automatic-invocation control, and more).
+> This repo's `/commit` lives in `.claude/commands/commit.md` and works fine.
 
 ---
 
-## 1. 파일 위치와 커맨드 이름
+## 1. File locations and command names
 
-커맨드 이름은 **파일/디렉토리 위치**에서 나온다(frontmatter `name`은 표시 라벨일 뿐).
+The command name comes from the **file/directory location** (the frontmatter `name` is only a
+display label).
 
-| 위치 | 커맨드 이름 | 적용 범위 |
+| Location | Command name | Scope |
 |------|-------------|-----------|
-| `.claude/commands/deploy.md` | `/deploy` (파일명) | 프로젝트(커밋) |
-| `.claude/skills/deploy/SKILL.md` | `/deploy` (디렉토리명) | 프로젝트(커밋) |
-| `~/.claude/skills/<name>/SKILL.md` | `/<name>` | 나(모든 프로젝트) |
-| `<plugin>/skills/<name>/SKILL.md` | `/<plugin>:<name>` | 플러그인 활성 위치 |
+| `.claude/commands/deploy.md` | `/deploy` (file name) | Project (committed) |
+| `.claude/skills/deploy/SKILL.md` | `/deploy` (directory name) | Project (committed) |
+| `~/.claude/skills/<name>/SKILL.md` | `/<name>` | Me (all projects) |
+| `<plugin>/skills/<name>/SKILL.md` | `/<plugin>:<name>` | Wherever the plugin is enabled |
 
-- 같은 이름 충돌 시: 플러그인은 네임스페이스라 무충돌, 그 외 enterprise > personal > project.
-  skill과 command가 같은 이름이면 **skill 우선**.
-- 커스텀 커맨드/skill은 같은 이름의 bundled skill(`/code-review` 등)도 오버라이드한다.
+- On name collisions: plugins are namespaced so they never collide; otherwise
+  enterprise > personal > project. If a skill and a command share a name, the **skill wins**.
+- Custom commands/skills also override bundled skills of the same name (`/code-review`, etc.).
 
 ---
 
-## 2. frontmatter (자주 쓰는 필드)
+## 2. Frontmatter (commonly used fields)
 
 ```yaml
 ---
-description: 무엇을 하고 언제 쓰는지 (Claude가 자동 호출 판단에 사용)
-disable-model-invocation: true      # 나만 호출 가능(Claude 자동 호출 금지)
+description: What it does and when to use it (Claude uses this for auto-invocation decisions)
+disable-model-invocation: true      # Only I can invoke it (no automatic invocation by Claude)
 allowed-tools: Bash(git add *) Bash(git commit *)
 argument-hint: "[issue-number]"
-model: inherit                      # 이 skill 활성 동안 쓸 모델
-context: fork                       # 별도 subagent 컨텍스트에서 실행
+model: inherit                      # Model to use while this skill is active
+context: fork                       # Run in a separate subagent context
 ---
 ```
 
-| 필드 | 용도 |
+| Field | Purpose |
 |------|------|
-| `description` | 유일 권장 필드. Claude의 자동 호출 판단 기준 |
-| `disable-model-invocation: true` | **나만** 호출(부작용 있는 `/commit`·`/deploy`에 필수) |
-| `user-invocable: false` | **Claude만** 호출(`/` 메뉴 숨김, 배경 지식용) |
-| `allowed-tools` | 이 커맨드 호출 턴 동안 무승인 허용 도구(다음 메시지에 해제) |
-| `disallowed-tools` | 이 커맨드 활성 동안 제거할 도구 |
-| `argument-hint` | 자동완성 힌트 |
-| `arguments` | 명명 위치 인자(`$name` 치환) |
-| `model` / `effort` | 이 커맨드 활성 동안 모델/추론 강도 |
-| `context: fork` | 격리된 subagent에서 실행(`agent`로 타입 지정) |
-| `paths` | 이 패턴 파일 작업 시에만 자동 활성 |
+| `description` | The only recommended field. Basis for Claude's auto-invocation decisions |
+| `disable-model-invocation: true` | **Only I** can invoke (required for side-effectful `/commit`, `/deploy`) |
+| `user-invocable: false` | **Only Claude** can invoke (hidden from the `/` menu, for background knowledge) |
+| `allowed-tools` | Tools allowed without approval during the invoking turn (cleared on the next message) |
+| `disallowed-tools` | Tools removed while this command is active |
+| `argument-hint` | Autocomplete hint |
+| `arguments` | Named positional arguments (`$name` substitution) |
+| `model` / `effort` | Model/reasoning effort while this command is active |
+| `context: fork` | Run in an isolated subagent (specify the type with `agent`) |
+| `paths` | Auto-activate only when working on files matching these patterns |
 
-> **harness 관점:** 부작용이 있는 커맨드(`/commit`, `/deploy`)에는 반드시
-> `disable-model-invocation: true`를 붙여 Claude가 임의 실행하지 못하게 한다.
-> `allowed-tools`는 프로젝트 skill의 경우 워크스페이스 신뢰 수락 후 적용된다 —
-> skill이 스스로 넓은 권한을 부여할 수 있으니 신뢰 전 검토한다.
+> **Harness perspective:** always add `disable-model-invocation: true` to commands with side
+> effects (`/commit`, `/deploy`) so Claude cannot run them arbitrarily.
+> For project skills, `allowed-tools` takes effect after workspace trust is accepted —
+> a skill can grant itself broad permissions, so review it before trusting.
 
 ---
 
-## 3. 인자 전달
+## 3. Passing arguments
 
-| 변수 | 의미 |
+| Variable | Meaning |
 |------|------|
-| `$ARGUMENTS` | 전체 인자 문자열 |
-| `$ARGUMENTS[N]` / `$N` | N번째(0-based) 인자. `$0`, `$1` … |
-| `$name` | `arguments` frontmatter로 선언한 명명 인자 |
+| `$ARGUMENTS` | The full argument string |
+| `$ARGUMENTS[N]` / `$N` | The Nth (0-based) argument. `$0`, `$1` … |
+| `$name` | Named argument declared via the `arguments` frontmatter |
 
 ```yaml
 ---
@@ -89,15 +91,15 @@ disable-model-invocation: true
 Fix GitHub issue $ARGUMENTS following our coding standards.
 ```
 
-`/fix-issue 123` → "Fix GitHub issue 123 …". `$ARGUMENTS`가 없으면 입력이
-`ARGUMENTS: <값>`으로 뒤에 붙는다. 다중 단어 인자는 따옴표로 감싼다.
+`/fix-issue 123` → "Fix GitHub issue 123 …". If `$ARGUMENTS` is absent, the input is appended
+as `ARGUMENTS: <value>`. Wrap multi-word arguments in quotes.
 
 ---
 
-## 4. 동적 컨텍스트 주입 — `` !`command` ``
+## 4. Dynamic context injection — `` !`command` ``
 
-skill 내용이 Claude에 전달되기 **전에** 셸 명령을 실행하고 그 출력으로 치환한다
-(Claude가 실행하는 게 아니라 전처리).
+Runs a shell command **before** the skill content is delivered to Claude and substitutes its
+output (preprocessing — Claude does not execute it).
 
 ```yaml
 ---
@@ -110,50 +112,54 @@ allowed-tools: Bash(git diff *)
 !`git diff HEAD`
 
 ## Instructions
-위 변경을 2~3개 불릿으로 요약하고 위험을 나열한다.
+Summarize the changes above in 2-3 bullets and list any risks.
 ```
 
-- 줄 시작 또는 공백 뒤의 `` !`...` ``만 인식(`KEY=!`cmd``는 리터럴).
-- 여러 줄은 ` ```! ` 펜스 블록 사용.
-- ⚠️ 정책상 차단: 설정 `disableSkillShellExecution: true`면 실행 대신
-  `[shell command execution disabled by policy]`로 대체(bundled/managed는 예외).
-  → harness에서 skill 내 임의 셸 실행을 막고 싶을 때 사용(`settings-scopes` skill).
+- Only `` !`...` `` at the start of a line or after whitespace is recognized
+  (`KEY=!`cmd`` is a literal).
+- For multiple lines, use a ` ```! ` fenced block.
+- ⚠️ Policy blocking: with the setting `disableSkillShellExecution: true`, execution is replaced
+  with `[shell command execution disabled by policy]` (bundled/managed skills are exempt).
+  → Use this in a harness when you want to block arbitrary shell execution inside skills
+  (see the `settings-scopes` skill).
 
 ---
 
-## 5. Claude의 커맨드 접근 제어 (harness)
+## 5. Controlling Claude's command access (harness)
 
-permissions로 어떤 skill/command를 Claude가 호출할지 통제한다(`Skill` 도구 기준):
+Control which skills/commands Claude may invoke via permissions (based on the `Skill` tool):
 
 ```text
-# 전체 차단(deny): Skill
-# 특정만 허용:      Skill(commit)   Skill(review-pr *)
-# 특정 차단:        Skill(deploy *)
+# Block all (deny): Skill
+# Allow only specific ones: Skill(commit)   Skill(review-pr *)
+# Block specific ones:      Skill(deploy *)
 ```
 
-- `Skill(name)` 정확 일치, `Skill(name *)` 접두 일치.
-- `disable-model-invocation: true`는 Claude 컨텍스트에서 아예 제거.
-- 설정의 `skillOverrides`로 frontmatter 수정 없이 가시성 제어(on/name-only/off 등).
+- `Skill(name)` matches exactly, `Skill(name *)` matches by prefix.
+- `disable-model-invocation: true` removes it from Claude's context entirely.
+- `skillOverrides` in settings controls visibility without editing frontmatter
+  (on/name-only/off, etc.).
 
 ---
 
-## 예시: 이 repo의 `/commit`을 skill로 강화한다면
+## Example: upgrading this repo's `/commit` to a skill
 
 ```yaml
 ---
-description: Conventional Commits 규칙으로 커밋(co-authored-by 제거)
+description: Commit with Conventional Commits rules (strip co-authored-by)
 disable-model-invocation: true
 allowed-tools: Bash(git add *) Bash(git commit *) Bash(git status *) Bash(git diff *) Bash(git log *)
 ---
 ```
 
-`disable-model-invocation`으로 사용자만 실행, `allowed-tools`로 커밋 관련 git 명령을
-무승인 허용. 절차 본문은 기존 `commit.md`를 그대로 쓴다.
+`disable-model-invocation` restricts execution to the user, and `allowed-tools` allows
+commit-related git commands without approval. The procedure body reuses the existing
+`commit.md` as-is.
 
 ---
 
-## 참고 링크
+## References
 
-- Slash commands (영문): https://code.claude.com/docs/en/slash-commands
-- Skills (영문): https://code.claude.com/docs/en/skills
-- 관련 skill: `project-rules`(CLAUDE.md), `workflows`, `harness-hooks`
+- Slash commands: https://code.claude.com/docs/en/slash-commands
+- Skills: https://code.claude.com/docs/en/skills
+- Related skills: `project-rules` (CLAUDE.md), `workflows`, `harness-hooks`

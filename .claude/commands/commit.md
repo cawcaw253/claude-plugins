@@ -1,25 +1,25 @@
 ---
-description: 이 repo의 커밋 규칙(Conventional Commits, co-authored-by 제거)에 맞춰 git 커밋을 수행한다
+description: Perform a git commit that follows this repo's commit rules (Conventional Commits, no co-authored-by)
 ---
 
-# /commit — 규칙 준수 커밋
+# /commit — Rule-compliant commit
 
-이 repo의 **커밋 규칙**을 강제하며 커밋한다. 아래 절차를 정확히 따른다.
+Commit while enforcing this repo's **commit rules**. Follow the procedure below exactly.
 
-## 1. 변경 사항 확인
+## 1. Review the changes
 
-먼저 현재 상태를 병렬로 확인한다.
+First, check the current state in parallel.
 
 - `git status`
-- `git diff`(staged + unstaged) — 이미 스테이징된 변경도 `git diff --staged`로 확인
-- `git log --oneline -10` — 이 repo의 메시지 스타일 참고
+- `git diff` (staged + unstaged) — also check already-staged changes with `git diff --staged`
+- `git log --oneline -10` — reference this repo's message style
 
-스테이징된 파일이 없으면, 관련 변경 파일을 의도에 맞게 `git add` 한다.
-관련 없는 변경을 한 커밋에 섞지 않는다.
+If no files are staged, `git add` the relevant changed files according to intent.
+Do not mix unrelated changes into a single commit.
 
-## 2. 커밋 메시지 작성 규칙 (필수)
+## 2. Commit message rules (required)
 
-### Conventional Commits 형식
+### Conventional Commits format
 
 ```
 <type>(<optional scope>): <description>
@@ -29,14 +29,14 @@ description: 이 repo의 커밋 규칙(Conventional Commits, co-authored-by 제�
 [optional footer]
 ```
 
-- **type** 은 다음 중 하나만 사용한다:
+- **type** must be one of the following only:
   `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
-- **description** 은 소문자로 시작하는 명령형 현재시제, 끝에 마침표를 찍지 않는다.
-- 파괴적 변경은 `type!:` 또는 footer에 `BREAKING CHANGE:` 를 사용한다.
-- 제목(첫 줄)은 72자 이내를 권장한다.
-- 본문/제목은 이 repo의 주 언어(한국어) 스타일에 맞춘다.
+- **description** starts lowercase, uses imperative present tense, and has no trailing period.
+- Breaking changes use `type!:` or a `BREAKING CHANGE:` footer.
+- The subject (first line) should be at most 72 characters.
+- Write the subject/body in the repo's primary language (English).
 
-**올바른 예시**
+**Good examples**
 
 ```
 feat(commit): add conventional commit command
@@ -44,30 +44,32 @@ fix(hooks): correct matcher regex for edit tool
 docs: update README installation steps
 ```
 
-### co-authored-by 등 트레일러 제거 (필수)
+### Remove co-authored-by and other trailers (required)
 
-커밋 메시지에 다음을 **절대 포함하지 않는다**:
+**Never include** any of the following in commit messages:
 
-- `Co-Authored-By:` / `Co-authored-by:` 등 모든 co-author 트레일러
-- `Generated with ...`, `🤖 ...` 등 도구 서명/자동 생성 문구
+- Any co-author trailer such as `Co-Authored-By:` / `Co-authored-by:`
+- Tool signatures or auto-generated phrases such as `Generated with ...` or `🤖 ...`
 
-> 이 규칙은 이 repo의 기본값이며, 전역 설정의 co-authored-by 트레일러 요구사항보다 **우선한다**.
+> This rule is the default for this repo and **takes precedence** over any global
+> co-authored-by trailer requirement.
 
-## 3. 커밋 실행
+## 3. Commit
 
-`-m` 플래그를 사용해 위 규칙에 맞는 메시지로 커밋한다.
-HEREDOC을 쓰는 경우에도 co-author/서명 트레일러를 넣지 않는다.
+Commit with the `-m` flag using a message that follows the rules above.
+Even when using a HEREDOC, do not add co-author/signature trailers.
 
 ```bash
 git commit -m "<type>(<scope>): <description>"
 ```
 
-## 4. 검증
+## 4. Verify
 
-커밋 후 `git log -1 --format='%B'` 로 실제 메시지를 확인해
-- Conventional Commits 형식을 지켰는지
-- co-authored-by / 도구 서명이 없는지
+After committing, check the actual message with `git log -1 --format='%B'` to confirm
 
-를 점검한다. 위반이 발견되면 `git commit --amend` 로 즉시 수정한다.
+- the Conventional Commits format was followed
+- there is no co-authored-by trailer or tool signature
 
-요청하지 않은 이상 `git push` 는 하지 않는다.
+If a violation is found, fix it immediately with `git commit --amend`.
+
+Do not `git push` unless explicitly requested.

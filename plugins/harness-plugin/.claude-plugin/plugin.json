@@ -1,6 +1,6 @@
 {
   "name": "harness-plugin",
-  "description": "Claude Code harness 구성을 돕는 skill 모음: 동작 원리(agentic-loop), 설정 범위(settings-scopes), hooks/permissions 강제(harness-hooks), CLAUDE.md 규칙(project-rules), 커스텀 커맨드(slash-commands), 오케스트레이션(workflows), 자동 메모리(agent-memory).",
+  "description": "A collection of skills for configuring the Claude Code harness: how it works (agentic-loop), settings scopes (settings-scopes), hooks/permissions enforcement (harness-hooks), CLAUDE.md rules (project-rules), custom commands (slash-commands), orchestration (workflows), auto memory (agent-memory).",
   "author": {
     "name": "cawcaw253"
   },

@@ -3,12 +3,12 @@
   "owner": {
     "name": "cawcaw253"
   },
-  "description": "cawcaw253의 Claude Code 플러그인 마켓플레이스",
+  "description": "cawcaw253's Claude Code plugin marketplace",
   "plugins": [
     {
       "name": "harness-plugin",
       "source": "./plugins/harness-plugin",
-      "description": "harness 구성 가이드 skill 모음(동작 원리·설정 범위·hooks·규칙·커맨드·workflow·메모리)",
+      "description": "A collection of harness configuration guide skills (how Claude Code works, settings scopes, hooks, rules, commands, workflows, memory)",
       "category": "security",
       "keywords": ["harness", "hooks", "permissions", "guardrails", "skills", "commands", "workflows", "memory"]
     }
