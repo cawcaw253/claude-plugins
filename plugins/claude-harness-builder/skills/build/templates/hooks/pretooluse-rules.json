@@ -1,0 +1,23 @@
+{
+  "_comment": "Ruleset for pretooluse-guard.sh. One object per rule: tool (exact tool name — one rule per tool), pattern (extended regex matched against file_path for Read/Edit/Write and against command for Bash), reason (shown to Claude on deny). IMPORTANT: every file-protection rule needs its Bash companion — blocking only Write/Edit leaves shell redirects open.",
+  "rules": [
+    {
+      "id": "deny-secret-file-write",
+      "tool": "Write",
+      "pattern": "(^|/)\\.env(\\.|$)|(^|/)secrets?/|\\.pem$|(^|/)kubeconfig$",
+      "reason": "Writing secret files is blocked. Use a secrets manager."
+    },
+    {
+      "id": "deny-secret-file-edit",
+      "tool": "Edit",
+      "pattern": "(^|/)\\.env(\\.|$)|(^|/)secrets?/|\\.pem$|(^|/)kubeconfig$",
+      "reason": "Editing secret files is blocked."
+    },
+    {
+      "id": "deny-secret-file-shell-bypass",
+      "tool": "Bash",
+      "pattern": "(>>?|tee\\b|dd\\b|cp\\b|mv\\b|cat\\b)[^|;&]*(\\.env(\\.|\\b)|secrets?/|\\.pem\\b|kubeconfig\\b)",
+      "reason": "Touching secret files via shell commands is blocked as well."
+    }
+  ]
+}

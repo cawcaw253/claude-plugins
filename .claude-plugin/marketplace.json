@@ -11,6 +11,13 @@
       "description": "A collection of harness configuration guide skills (how Claude Code works, settings scopes, hooks, rules, commands, workflows, memory)",
       "category": "security",
       "keywords": ["harness", "hooks", "permissions", "guardrails", "skills", "commands", "workflows", "memory"]
+    },
+    {
+      "name": "claude-harness-builder",
+      "source": "./plugins/claude-harness-builder",
+      "description": "Interactive wizard that builds a harness in your project (settings.json, CLAUDE.md, hooks, custom commands) with confirm-before-write steps and resume support",
+      "category": "security",
+      "keywords": ["harness", "wizard", "generator", "hooks", "permissions", "settings", "claude-md", "guardrails"]
     }
   ]
 }

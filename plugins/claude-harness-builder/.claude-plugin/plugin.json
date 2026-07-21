@@ -1,0 +1,11 @@
+{
+  "name": "claude-harness-builder",
+  "description": "Interactive wizard that builds a Claude Code harness in your project: settings.json permission presets, a CLAUDE.md skeleton, enforcement hooks for 7 hook events with ready-to-use script templates, and custom slash commands generated from your description. Invoke /claude-harness-builder:build or just ask to 'set up a harness for this project'.",
+  "author": {
+    "name": "cawcaw253"
+  },
+  "homepage": "https://github.com/cawcaw253/claude-plugins",
+  "repository": "https://github.com/cawcaw253/claude-plugins",
+  "license": "MIT",
+  "keywords": ["harness", "wizard", "generator", "scaffold", "hooks", "permissions", "settings", "claude-md", "commands", "guardrails"]
+}

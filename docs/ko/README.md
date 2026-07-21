@@ -16,18 +16,26 @@ claude-plugins/
 │   └── ko/                       # 한국어 문서
 │       └── README.md
 └── plugins/
-    └── harness-plugin/           # 플러그인
+    ├── harness-plugin/           # 지식 플러그인 (harness를 설명)
+    │   ├── .claude-plugin/
+    │   │   └── plugin.json
+    │   └── skills/
+    │       ├── agentic-loop/     # Claude Code 동작 원리
+    │       ├── settings-scopes/  # 설정 범위(user/project/local)
+    │       ├── harness-hooks/    # hooks/permissions 강제
+    │       │   └── examples.md   # 실전 hook 예제 모음
+    │       ├── project-rules/    # CLAUDE.md·.claude/rules 규칙
+    │       ├── slash-commands/   # 커스텀 커맨드(= skill)
+    │       ├── workflows/        # subagent 오케스트레이션
+    │       └── agent-memory/     # 자동 메모리·MEMORY.md
+    └── claude-harness-builder/   # 위저드 플러그인 (harness를 구축)
         ├── .claude-plugin/
         │   └── plugin.json
         └── skills/
-            ├── agentic-loop/     # Claude Code 동작 원리
-            ├── settings-scopes/  # 설정 범위(user/project/local)
-            ├── harness-hooks/    # hooks/permissions 강제
-            │   └── examples.md   # 실전 hook 예제 모음
-            ├── project-rules/    # CLAUDE.md·.claude/rules 규칙
-            ├── slash-commands/   # 커스텀 커맨드(= skill)
-            ├── workflows/        # subagent 오케스트레이션
-            └── agent-memory/     # 자동 메모리·MEMORY.md
+            └── build/            # /claude-harness-builder:build 위저드
+                ├── SKILL.md
+                ├── references/   # 단계별 플레이북 (점진적 로드)
+                └── templates/    # hook 스크립트 템플릿
 ```
 
 ## 포함된 플러그인
@@ -35,6 +43,7 @@ claude-plugins/
 | 플러그인 | 설명 |
 |----------|------|
 | `harness-plugin` | Claude Code harness 구성을 돕는 skill 모음 |
+| `claude-harness-builder` | 프로젝트에 harness(settings.json, CLAUDE.md, hooks, 커스텀 커맨드)를 구축해 주는 대화형 위저드 |
 
 ### `harness-plugin`의 skill
 
@@ -61,6 +70,26 @@ claude-plugins/
 `harness-hooks` skill에는 실전 hook 패턴을 모은 보조 레퍼런스
 `skills/harness-hooks/examples.md`가 포함되어 있어, skill이 필요할 때 함께 참조합니다.
 
+### `claude-harness-builder` 위저드
+
+`harness-plugin`이 harness를 *설명*한다면, `claude-harness-builder`는 harness를
+*구축*합니다. `/claude-harness-builder:build`를 호출하거나 "이 프로젝트에 harness
+구성해줘"라고 요청하면 6단계 위저드가 진행됩니다.
+
+| 단계 | 페이즈 | 하는 일 |
+|------|--------|---------|
+| 0 | 인트로 | agentic loop 다이어그램과 각 hook 이벤트의 개입 지점을 설명 |
+| 1 | 범위 | harness를 둘 위치 선택 (project / local / user) |
+| 2 | 설정 | 권한 프리셋(시크릿 차단, 파괴적 bash 차단 등)을 settings.json에 병합 |
+| 3 | CLAUDE.md | repo 근거 기반 규칙 스켈레톤을 마커 아래에 append |
+| 4 | Hooks | 7개 hook 이벤트 체크박스 선택 후, hook별 step-by-step: 설명 → 예시 → 정책 선택/서술 → 확인 → 적용 |
+| 5 | 커맨드 | `/commit` 류 예시로 커스텀 커맨드 개념을 설명하고, 사용자의 서술로부터 커맨드 생성 |
+| 6 | 요약 | 적용 파일 표, 검증 체크리스트, 킬스위치, 롤백 안내 |
+
+모든 쓰기는 사전 확인을 거치고, 기존 파일은 덮어쓰지 않고 병합하며, 진행 상태를
+`.claude/.harness-builder-state.json`에 저장해 중단된 실행도 이어서 진행됩니다.
+이 플러그인은 자체 완결형으로, `harness-plugin` 설치가 필요하지 않습니다.
+
 ## 설치
 
 마켓플레이스를 추가한 뒤 원하는 플러그인을 설치합니다.
@@ -68,6 +97,7 @@ claude-plugins/
 ```shell
 /plugin marketplace add cawcaw253/claude-plugins
 /plugin install harness-plugin@cawcaw253-plugins
+/plugin install claude-harness-builder@cawcaw253-plugins
 ```
 
 설치 후 skill은 네임스페이스가 붙어 `/harness-plugin:harness-hooks`로 호출되며,

@@ -16,18 +16,26 @@ claude-plugins/
 │   └── ko/                       # Korean documentation
 │       └── README.md
 └── plugins/
-    └── harness-plugin/           # Plugin
+    ├── harness-plugin/           # Knowledge plugin (explains the harness)
+    │   ├── .claude-plugin/
+    │   │   └── plugin.json
+    │   └── skills/
+    │       ├── agentic-loop/     # How Claude Code works
+    │       ├── settings-scopes/  # Settings scopes (user/project/local)
+    │       ├── harness-hooks/    # Enforcing hooks/permissions
+    │       │   └── examples.md   # Practical hook examples
+    │       ├── project-rules/    # CLAUDE.md and .claude/rules rules
+    │       ├── slash-commands/   # Custom commands (= skills)
+    │       ├── workflows/        # Subagent orchestration
+    │       └── agent-memory/     # Auto memory and MEMORY.md
+    └── claude-harness-builder/   # Wizard plugin (builds a harness)
         ├── .claude-plugin/
         │   └── plugin.json
         └── skills/
-            ├── agentic-loop/     # How Claude Code works
-            ├── settings-scopes/  # Settings scopes (user/project/local)
-            ├── harness-hooks/    # Enforcing hooks/permissions
-            │   └── examples.md   # Practical hook examples
-            ├── project-rules/    # CLAUDE.md and .claude/rules rules
-            ├── slash-commands/   # Custom commands (= skills)
-            ├── workflows/        # Subagent orchestration
-            └── agent-memory/     # Auto memory and MEMORY.md
+            └── build/            # /claude-harness-builder:build wizard
+                ├── SKILL.md
+                ├── references/   # Per-phase playbooks (progressive disclosure)
+                └── templates/    # Hook script templates
 ```
 
 ## Included plugins
@@ -35,6 +43,7 @@ claude-plugins/
 | Plugin | Description |
 |--------|-------------|
 | `harness-plugin` | A collection of skills for configuring the Claude Code harness |
+| `claude-harness-builder` | Interactive wizard that builds a harness (settings.json, CLAUDE.md, hooks, custom commands) in your project |
 
 ### Skills in `harness-plugin`
 
@@ -63,6 +72,26 @@ The `harness-hooks` skill ships with a companion reference,
 `skills/harness-hooks/examples.md`, which collects practical hook patterns and is
 consulted alongside the skill when needed.
 
+### The `claude-harness-builder` wizard
+
+While `harness-plugin` *explains* the harness, `claude-harness-builder` *builds* one.
+Invoke `/claude-harness-builder:build` (or just ask to "set up a harness for this
+project") and a 6-step wizard walks you through it:
+
+| Step | Phase | What it does |
+|------|-------|--------------|
+| 0 | Intro | Shows the agentic-loop diagram and where each hook event intervenes |
+| 1 | Scope | Choose where the harness lives (project / local / user) |
+| 2 | Settings | Permission presets (deny secrets, deny destructive bash, …) merged into settings.json |
+| 3 | CLAUDE.md | Rules skeleton generated from repo evidence, appended under markers |
+| 4 | Hooks | Checkbox selection over 7 hook events, then per-hook step-by-step: explain → example → pick/describe a policy → confirm → apply |
+| 5 | Commands | Explains custom commands with a `/commit`-style example, then generates commands from your description |
+| 6 | Summary | Applied-files table, verification checklist, kill switches, rollback |
+
+Every write is confirmed first; existing files are merged, never clobbered; progress
+is saved to `.claude/.harness-builder-state.json` so an interrupted run resumes.
+The plugin is self-contained — it does not require `harness-plugin`.
+
 ## Installation
 
 Add the marketplace, then install the plugin you want.
@@ -70,6 +99,7 @@ Add the marketplace, then install the plugin you want.
 ```shell
 /plugin marketplace add cawcaw253/claude-plugins
 /plugin install harness-plugin@cawcaw253-plugins
+/plugin install claude-harness-builder@cawcaw253-plugins
 ```
 
 After installation, skills are namespaced and invoked as `/harness-plugin:harness-hooks`,
