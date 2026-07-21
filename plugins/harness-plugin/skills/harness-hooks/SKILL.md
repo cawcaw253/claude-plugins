@@ -244,6 +244,11 @@ exit 0
 
 > `if`는 fail-open이므로 절대 금지선은 permissions의 `deny`와 병행한다.
 
+**실전 예시**: 실제 운영 harness에서 검증된 이벤트별 전체 스크립트 예시
+(SessionStart 상태 주입, UserPromptSubmit 키워드 트리거, PreToolUse 룰셋 enforcer,
+PostToolUse 감사 로그, Stop/StopFailure 게이트, 플러그인 hooks.json 형식 함정)는
+이 skill의 [examples.md](examples.md)를 읽는다.
+
 ---
 
 ## 참고 링크
