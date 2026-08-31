@@ -1,0 +1,60 @@
+# CI: validate JSON manifests (hard gate) and lint hook templates (advisory).
+# A malformed manifest breaks plugin installation, so JSON validity fails CI.
+# All tooling (bash, find, jq, shellcheck) ships with ubuntu-latest.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate manifests and lint hooks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Hard gate: fail if any JSON file is invalid. Discovered via find so new
+      # manifests are covered automatically.
+      - name: Validate all JSON files
+        run: |
+          set -euo pipefail
+          status=0
+          while IFS= read -r -d '' file; do
+            if jq empty "$file" >/dev/null 2>&1; then
+              echo "valid:   $file"
+            else
+              echo "INVALID: $file"
+              jq empty "$file" || true
+              status=1
+            fi
+          done < <(find . -type f -name '*.json' -not -path './.git/*' -print0)
+          if [ "$status" -ne 0 ]; then
+            echo "::error::One or more JSON files are invalid. See output above."
+            exit 1
+          fi
+          echo "All JSON files are valid."
+
+      # Advisory: hook templates hold {{PLACEHOLDER}} tokens that trip strict
+      # parsing, so shellcheck is non-blocking.
+      - name: Lint shipped hook templates (advisory)
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          shellcheck --version
+          shopt -s nullglob
+          found=0
+          for hook in plugins/*/skills/*/templates/hooks/*.sh; do
+            found=1
+            echo "::group::shellcheck $hook"
+            shellcheck --severity=warning "$hook" || true
+            echo "::endgroup::"
+          done
+          if [ "$found" -eq 0 ]; then
+            echo "No hook templates found to lint."
+          fi
