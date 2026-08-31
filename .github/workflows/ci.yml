@@ -1,0 +1,93 @@
+# CI workflow for the Claude Code plugin marketplace.
+#
+# Why this exists:
+# This repository ships JSON manifests (the marketplace catalog and per-plugin
+# manifests) plus executable bash hook templates. A single malformed JSON file
+# breaks plugin installation for every user, so the most valuable automated
+# guard is a hard-failing JSON validation step. Shell linting is added as an
+# advisory step because the shipped hooks are TEMPLATES that intentionally
+# contain `{{PLACEHOLDER}}` tokens (substituted at generation time), which make
+# strict shell parsing unreliable.
+#
+# All tooling used here (bash, find, jq, shellcheck) is preinstalled on the
+# GitHub-hosted `ubuntu-latest` runner, so no extra dependencies are installed.
+
+name: CI
+
+# Run on every push to main and on pull requests targeting main, so a broken
+# manifest is caught before it can be merged or released.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate manifests and lint hooks
+    runs-on: ubuntu-latest
+
+    steps:
+      # Fetch the repository contents so the steps below can inspect files.
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # HARD GATE: validate every JSON file in the repo.
+      #
+      # We discover JSON files generically with `find` (excluding the `.git`
+      # directory) so that newly added manifests are covered automatically
+      # without editing this workflow. Each file is parsed with `jq empty`,
+      # which exits non-zero on invalid JSON. Any failure fails the job.
+      #
+      # Note: all currently shipped JSON files, including
+      # `plugins/claude-harness-builder/skills/build/templates/hooks/pretooluse-rules.json`,
+      # are valid JSON and are expected to pass this gate.
+      - name: Validate all JSON files
+        run: |
+          set -euo pipefail
+          status=0
+          # -print0 / read -d '' safely handles any paths containing spaces.
+          while IFS= read -r -d '' file; do
+            if jq empty "$file" >/dev/null 2>&1; then
+              echo "valid:   $file"
+            else
+              echo "INVALID: $file"
+              # Re-run without silencing so the parse error is visible in logs.
+              jq empty "$file" || true
+              status=1
+            fi
+          done < <(find . -type f -name '*.json' -not -path './.git/*' -print0)
+          if [ "$status" -ne 0 ]; then
+            echo "::error::One or more JSON files are invalid. See output above."
+            exit 1
+          fi
+          echo "All JSON files are valid."
+
+      # ADVISORY: lint the shipped bash hook templates with shellcheck.
+      #
+      # These files are TEMPLATES containing `{{PLACEHOLDER}}` tokens that are
+      # substituted only at generation time. Running shellcheck against the raw
+      # templates produces spurious findings (and a plain `bash -n` would fail),
+      # so this step is intentionally non-blocking via `continue-on-error: true`.
+      # It surfaces genuinely useful warnings without failing CI on the false
+      # positives caused by the placeholder syntax.
+      - name: Lint shipped hook templates (advisory)
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          shellcheck --version
+          shopt -s nullglob
+          found=0
+          for hook in plugins/*/skills/*/templates/hooks/*.sh; do
+            found=1
+            echo "::group::shellcheck $hook"
+            # Do not let a non-zero shellcheck exit stop the loop; this step is
+            # advisory only. SC2154 (referenced but not assigned) and SC1009 /
+            # SC1073 / SC1072 (parse errors) are the codes most commonly tripped
+            # by the `{{PLACEHOLDER}}` tokens.
+            shellcheck --severity=warning "$hook" || true
+            echo "::endgroup::"
+          done
+          if [ "$found" -eq 0 ]; then
+            echo "No hook templates found to lint."
+          fi
